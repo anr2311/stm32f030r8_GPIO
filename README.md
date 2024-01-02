@@ -1,4 +1,4 @@
-The repository contains the codebase developed from scratch towards the STM32F030R8 microcontroller and for the NUCLEO board of the same.
+The repository contains the GPIO drivers developed from scratch towards the STM32F030R8 microcontroller based NUCLEO board.
 
 The sample application code toggles the GPIO port A pin 5 (the on-board LED of the Nucleo board) and uses a SW delay of approximately ~7 seconds:
 
