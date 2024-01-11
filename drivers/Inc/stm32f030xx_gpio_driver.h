@@ -57,7 +57,12 @@
 #define GPIO_PU_ONLY		1
 #define GPIO_PD_ONLY		2
 
-
+/* defining the GPIO base address to Port Code converter */
+#define GPIO_BASEADDR_TO_PR(x)	(x == GPIOA) ? 0 : \
+								(x == GPIOB) ? 1 : \
+								(x == GPIOC) ? 2 : \
+								(x == GPIOD) ? 3 : \
+								(x == GPIOF) ? 5 : 0
 
 typedef struct {
 	uint8_t GPIO_PinNumber;
@@ -97,7 +102,7 @@ void GPIO_WriteToOutputPort (GPIO_RegDef_t *pGPIOx, uint8_t Value);
 void GPIO_ToggleOutputPin (GPIO_RegDef_t *pGPIOx, uint8_t PinNumber);
 
 /* GPIO interrupt config and handling */
-void GPIO_IRQConfig (uint8_t IRQNumber, uint8_t IRQPriority, uint8_t EnOrDi);
+void GPIO_IRQConfig (uint8_t IRQNumber, uint32_t IRQPriority, uint8_t EnOrDi);
 void GPIO_IRQHandling (uint8_t PinNumber);
 
 #endif /* INC_STM32F030XX_GPIO_DRIVER_H_ */

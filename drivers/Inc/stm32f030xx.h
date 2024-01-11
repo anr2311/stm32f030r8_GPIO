@@ -12,6 +12,19 @@
 
 #define __vo volatile
 
+/* Processor specific (ARM Cortex M0) definitions */
+
+#define NVIC_ISER	(__vo uint32_t*)0xE000E100
+#define NVIC_ICER	(__vo uint32_t*)0xE000E180
+#define NVIC_IPR0	(__vo uint32_t*)0xE000E400
+#define NVIC_IPR1	(__vo uint32_t*)0xE000E404
+#define NVIC_IPR2	(__vo uint32_t*)0xE000E408
+#define NVIC_IPR3	(__vo uint32_t*)0xE000E40C
+#define NVIC_IPR4	(__vo uint32_t*)0xE000E410
+#define NVIC_IPR5	(__vo uint32_t*)0xE000E414
+#define NVIC_IPR6	(__vo uint32_t*)0xE000E418
+#define NVIC_IPR7	(__vo uint32_t*)0xE000E41C
+
 /* defining flash and SRAM base address */
 
 #define FLASH_BASEADDR 0x08000000U /* have to explicitly add 'U' otherwise compiler treats it as signed */
@@ -52,6 +65,12 @@
 
 #define RCC_BASEADDR 	(AHB1_BASEADDR + 0x1000U)
 
+/* defining IRQ numbers for EXTI interrupts */
+
+#define IRQ_NO_EXTI0_1		5
+#define IRQ_NO_EXTI2_3		6
+#define IRQ_NO_EXTI4_15		7
+
 /* peripheral register definition structures */
 
 typedef struct {
@@ -85,6 +104,22 @@ typedef struct {
 	__vo uint32_t RCC_CR2;	 		/* address offset : 0x34 */
 } RCC_RegDef_t;
 
+typedef struct {
+	__vo uint32_t EXTI_IMR;			/* address offset : 0x00 */
+	__vo uint32_t EXTI_EMR;			/* address offset : 0x04 */
+	__vo uint32_t EXTI_RTSR;		/* address offset : 0x08 */
+	__vo uint32_t EXTI_FTSR;		/* address offset : 0x0C */
+	__vo uint32_t EXTI_SWIER;		/* address offset : 0x10 */
+	__vo uint32_t EXTI_PR;			/* address offset : 0x14 */
+} EXTI_RegDef_t;
+
+typedef struct {
+	__vo uint32_t SYSCFG_CFGR1;		/* address offset : 0x00 */
+	__vo uint32_t Reserved1;		/* address offset : 0x04 */
+	__vo uint32_t SYSCFG_EXTICR[4];	/* address offset : 0x08 - 0x14 */
+	__vo uint32_t SYSCFG_CFGR2;		/* address offset : 0x18 */
+} SYSCFG_RegDef_t;
+
 /* peripheral definitions */
 
 #define GPIOA ((GPIO_RegDef_t*) GPIOA_BASEADDR)
@@ -94,6 +129,10 @@ typedef struct {
 #define GPIOF ((GPIO_RegDef_t*) GPIOF_BASEADDR)
 
 #define RCC ((RCC_RegDef_t*) RCC_BASEADDR)
+
+#define EXTI ((EXTI_RegDef_t*) EXTI_BASEADDR)
+
+#define SYSCFG ((SYSCFG_RegDef_t*) SYSCFG_BASEADDR)
 
 /* Clock enable macros for GPIO peripherals */
 

@@ -29,6 +29,40 @@ void GPIO_Init (GPIO_Handle_t *pGPIOHandle)
 		// Clear TempReg
 		TempReg = 0u;
 	}
+	else
+	{
+		if (pGPIOHandle -> GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_IT_FT)
+		{
+			EXTI->EXTI_FTSR |= (1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+			// Clear the corresponding RTSR bit
+			EXTI->EXTI_RTSR &= ~(1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+		}
+		else if (pGPIOHandle -> GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_IT_RT)
+		{
+			EXTI->EXTI_RTSR |= (1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+			// Clear the corresponding FTSR bit
+			EXTI->EXTI_FTSR &= ~(1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+		}
+		else if (pGPIOHandle -> GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_IT_RFT)
+		{
+			EXTI->EXTI_FTSR |= (1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+
+			EXTI->EXTI_RTSR |= (1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+		}
+
+		// Configure the GPIO port selection in SYSCFG_EXTICR
+		SYSCFG_PCLK_EN(); /* Enable PCLK for SYSCFG peripheral */
+
+		uint8_t temp1, temp2, portcode;
+
+		temp1 = pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber / 4;
+		temp2 = pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber % 4;
+		portcode = GPIO_BASEADDR_TO_PR(pGPIOHandle->pGPIOx);
+		SYSCFG ->SYSCFG_EXTICR[temp1] = portcode << (4 * temp2);
+
+		// Enable interrupt delivery in the Interrupt Mask Register
+		EXTI->EXTI_IMR |= (1u << pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
+	}
 
 	// Configure the speed of the GPIO pin
 	TempReg = pGPIOHandle -> GPIO_PinConfig.GPIO_PinSpeed << (2 * pGPIOHandle -> GPIO_PinConfig.GPIO_PinNumber);
@@ -221,9 +255,56 @@ void GPIO_ToggleOutputPin (GPIO_RegDef_t *pGPIOx, uint8_t PinNumber)
  * Return Parameters :
  * Note / Remarks	 :
  ********************************************************************/
-void GPIO_IRQConfig (uint8_t IRQNumber, uint8_t IRQPriority, uint8_t EnOrDi)
+void GPIO_IRQConfig (uint8_t IRQNumber, uint32_t IRQPriority, uint8_t EnOrDi)
 {
+	if (EnOrDi == ENABLE)
+	{
+		// Program ISER register to enable the interrupt
+		(*NVIC_ISER) |= (1u << IRQNumber);
+	}
+	else
+	{
+		// Program ICER register to disable the interrupt
+		(*NVIC_ICER) |= (1u << IRQNumber);
+	}
 
+	// Code to set the interrupt priority - lower the value higher the priority of the interrupt
+	uint8_t temp = IRQNumber % 4;
+
+	if (IRQNumber <= 3)
+	{
+		// Left shifting by 6 is required as Cortex M0 reads only bits [7:6] and ignores the bits [5:0]
+		(*NVIC_IPR0) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 7)
+	{
+		(*NVIC_IPR1) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 11)
+	{
+		(*NVIC_IPR2) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 15)
+	{
+		(*NVIC_IPR3) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 19)
+	{
+		(*NVIC_IPR4) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 23)
+	{
+		(*NVIC_IPR5) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 27)
+	{
+		(*NVIC_IPR6) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else if (IRQNumber <= 31)
+	{
+		(*NVIC_IPR7) |= ((IRQPriority) << (8 * temp)) << 6;
+	}
+	else {} // do nothing
 }
 
 /********************************************************************
@@ -235,5 +316,9 @@ void GPIO_IRQConfig (uint8_t IRQNumber, uint8_t IRQPriority, uint8_t EnOrDi)
  ********************************************************************/
 void GPIO_IRQHandling (uint8_t PinNumber)
 {
-
+	if (EXTI->EXTI_PR & (1 << PinNumber))
+	{
+		// Clear the pending IRQ
+		EXTI ->EXTI_PR |= (1u << PinNumber);
+	}
 }

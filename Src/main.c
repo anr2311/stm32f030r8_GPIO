@@ -25,6 +25,7 @@
 ********************************************/
 
 #include <stdint.h>
+#include <string.h>
 #include "stm32f030xx.h"
 #include "stm32f030xx_gpio_driver.h"
 
@@ -35,7 +36,11 @@
 
 int main(void)
 {
+	/* The following is GPIO LED configuration */
     GPIO_Handle_t GpioLed;
+
+    /* Clearing the local structure so as to not initialize garbage values to GPIO peripheral */
+    memset(&GpioLed, 0u, sizeof(GpioLed));
 
     GpioLed.pGPIOx = GPIOA;
 
@@ -55,14 +60,44 @@ int main(void)
     // GPIO initialization
     GPIO_Init (&GpioLed);
 
+    /* Writing a '0' to the LED GPIO pin initially */
     GPIO_WriteToOutputPin (GPIOA, GPIO_PIN5, GPIO_PIN_RESET);
 
-    while (1)
-    {
-    	GPIO_ToggleOutputPin (GPIOA, GPIO_PIN5);
+    /* Following is the GPIO button configuration */
+    GPIO_Handle_t GpioButton;
 
-    	for (int i = 0; i <= 5000000; i++); /* Software Delay of approx ~7 seconds */
-    }
+    /* Clearing the local structure so as to not initialize garbage values to GPIO peripheral */
+    memset(&GpioButton, 0u, sizeof(GpioButton));
+
+    GpioButton.pGPIOx = GPIOC;
+
+    GpioButton.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN13;
+
+    GpioButton.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IT_FT;
+
+    GpioButton.GPIO_PinConfig.GPIO_PinSpeed = GPIO_HI_SPEED;
+
+    GpioButton.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PU_ONLY;
+
+    // Enable Clock Control
+    GPIO_PClockControl (GPIOC, ENABLE);
+
+    // GPIO initialization
+    GPIO_Init (&GpioButton);
+
+    /* IRQ configurations - priority can be 0 - 3 */
+    GPIO_IRQConfig(IRQ_NO_EXTI4_15, 3u, ENABLE);
+
+    while(1);
 
     return 0;
+}
+
+void EXTI4_15_IRQHandler(void)
+{
+	/* Clearing the interrupt bit */
+	GPIO_IRQHandling(GPIO_PIN13);
+
+	/* Toggling the on board GPIO on GPIOA5 */
+	GPIO_ToggleOutputPin(GPIOA, GPIO_PIN5);
 }
